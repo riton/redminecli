@@ -12,10 +12,6 @@ from redminecli import utils, ProjectListCache
 import redminecli.projects
 import redminecli.shell
 
-api_key = "d85c410e6795b3cd08dacb7c875889e29d338d2c"
-
-ENDPOINT = "https://forge.in2p3.fr"
-
 options = None
 
 # def _setup_client():
