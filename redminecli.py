@@ -58,6 +58,12 @@ class RedmineCliShell(object):
             help='Use <file> to cache projects IDs'
         )
 
+        parser.add_argument('--redmine-version',
+            dest='redmine_version',
+            metavar='<version>',
+            help='Use <version> as the version of the remote Redmine service'
+        )
+
         return parser
 
     def get_subcommand_parser(this):
@@ -134,7 +140,7 @@ class RedmineCliShell(object):
             this.do_help(args)
             return 0
 
-        cli = redmine.Redmine(auth_url, key = api_key, debug = True, version = 2.1)
+        cli = redmine.Redmine(auth_url, key = api_key, debug = True, version = args.redmine_version)
 
         return args.func(cli, args)
 
@@ -149,8 +155,9 @@ class RedmineCliShell(object):
     def merge_config_args(this, args):
         config = this.config
 
-        for attr in ('global/cache_file', ):
-            section, opt_name = attr.split('/')
+        for attr in ( (str, 'global/cache_file', None), (float, 'global/redmine_version', 0.0) ):
+            attr_t, attr_name, default = attr
+            section, opt_name = attr_name.split('/')
 
             if not getattr(args, opt_name, None) is None:
                 continue
@@ -162,7 +169,10 @@ class RedmineCliShell(object):
             except ConfigParser.NoOptionError:
                 pass
 
-            setattr(args, opt_name, v)
+            if v is None:
+                v = default
+
+            setattr(args, opt_name, attr_t(v))
 
         
 
