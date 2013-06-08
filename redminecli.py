@@ -5,7 +5,7 @@ import sys
 import argparse
 import ConfigParser
 
-sys.path.insert(0, "/home/rferrand/Sources/python/redmine/pyredminews")
+sys.path.insert(0, "/home/rferrand/Sources/python/redminecli/pyredminews")
 import redmine
 
 from redminecli import utils, ProjectListCache
@@ -44,6 +44,13 @@ class RedmineCliShell(object):
             metavar='<config_file>',
             default = '~/.redminecli/config',
             help='Use <config_file> instead of ~/.redminecli/config'
+        )
+
+        parser.add_argument('-d', '--debug',
+            dest='debug',
+            action='store_true',
+            default=False,
+            help='Enable debug mode'
         )
 
         parser.add_argument('--auth-url',
@@ -140,7 +147,7 @@ class RedmineCliShell(object):
             this.do_help(args)
             return 0
 
-        cli = redmine.Redmine(auth_url, key = api_key, debug = True, version = args.redmine_version)
+        cli = redmine.Redmine(auth_url, key = api_key, debug = args.debug, version = args.redmine_version)
 
         return args.func(cli, args)
 
