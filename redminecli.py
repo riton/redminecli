@@ -187,7 +187,8 @@ class RedmineCliShell(object):
     def merge_config_args(this, args):
         config = this.config
 
-        for attr in ( (str, 'global/cache_file', None), (float, 'global/redmine_version', 0.0) ):
+        for attr in ( (str, 'global/cache_file', None), (float, 'global/redmine_version', 0.0),
+                      (int, 'global/strings_max_len', 20) ):
             attr_t, attr_name, default = attr
             section, opt_name = attr_name.split('/')
 

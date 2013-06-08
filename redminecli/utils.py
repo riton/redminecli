@@ -42,21 +42,33 @@ def bool_from_str(val):
             return False
         raise
 
-# Code base on https://github.com/openstack/python-novaclient/blob/master/novaclient/utils.py
-def print_list(objs, fields, formatters={}, sortby_index=None):
+def _set_table_common_opt(pt, args):
+    # Table max width
+    if not args is None:
+        if not args.strings_max_len is None:
+            pt.max_width = int(args.strings_max_len)
+
+    return pt
+
+# Code based on https://github.com/openstack/python-novaclient/blob/master/novaclient/utils.py
+def print_list(objs, fields, formatters={}, sortby_index=None, args = None):
 
     if sortby_index is None:
         sortby = None
     else:
         sortby = fields[sortby_index]
+
     pt = prettytable.PrettyTable([f for f in fields], caching=False)
     pt.align = 'l' 
+    _set_table_common_opt(pt, args)
 
+    data = None
     for o in objs:
         row = []
         for field in fields:
             if field in formatters:
-                row.append(formatters[field](o))
+                data = formatters[field](o)
+                row.append(data)
             else:
                 field_name = field.lower().replace(' ', '_')
                 data = o.get(field_name, '')
@@ -73,9 +85,11 @@ def print_list(objs, fields, formatters={}, sortby_index=None):
     print strutils.safe_encode(s)
 
 # Code base on https://github.com/openstack/python-novaclient/blob/master/novaclient/utils.py
-def print_dict(d, dict_property="Property", wrap=0):
+def print_dict(d, dict_property="Property", wrap=0, args = None):
     pt = prettytable.PrettyTable([dict_property, 'Value'], caching=False)
     pt.align = 'l'
+    _set_table_common_opt(pt, args)
+
     for k, v in d.iteritems():
         # convert dict to str to check length
         if isinstance(v, dict):
