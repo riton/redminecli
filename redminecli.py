@@ -143,6 +143,9 @@ class RedmineCliShell(object):
         # Merge args from command line and config file
         this.merge_config_args(args)
 
+        # Does the user provides some callbacks for printing
+        this.handle_user_exit(args)
+
         if args.func == this.do_help:
             this.do_help(args)
             return 0
@@ -158,6 +161,28 @@ class RedmineCliShell(object):
         this.config = config
 
         return config
+
+    def handle_user_exit(this, args):
+        config = this.config
+
+        try:
+            enabled = utils.bool_from_str(config.get('plugins', 'enable_user_exit'))
+            if enabled is False:
+                return
+
+        except ConfigParser.NoOptionError:
+            return
+
+        plugin_dir = config.get('plugins', 'plugin_dir')
+        plugin_dir = os.path.expanduser(plugin_dir)
+        sys.path.append(plugin_dir)
+
+        user_exit_plugin = config.get('plugins', 'user_exit_plugin')
+
+        user_exit = __import__(user_exit_plugin)
+
+        args.user_exit = user_exit
+        
 
     def merge_config_args(this, args):
         config = this.config

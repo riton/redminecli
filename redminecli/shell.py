@@ -1,59 +1,49 @@
 
 import redminecli
 from redminecli import utils, ProjectListCache
+from redminecli import printers
 
-def _get_cache(args):
-    return ProjectListCache(cache_file = args.cache_file)
 
-@utils.arg('--create',
-    dest = 'operation',
-    action = 'store_const',
-    const = 'create',
-    help = 'Build project list cache'
+def _get_printer(name, args):
+    """
+    Get printer *name*.
+    Return user_exit one or default one
+    """
+    printer = None
+    user_exit = getattr(args, 'user_exit', None)
+    if user_exit is None:
+        printer = getattr(printers, name)
+    else:
+        printer = getattr(user_exit, name)
+
+    return printer
+ 
+
+def do_project_list(cli, args):
+
+    projects_o = cli.projects
+
+    projects = []
+    for p in projects_o:
+        projects.append({
+            'id': p.id,
+            'identifier': p.identifier,
+            'name': p.name
+        })
+
+    # Sort by project_id
+    projects.sort(cmp = lambda x,y: cmp(x['id'], y['id']))
+
+    _get_printer('print_project_list', args)(projects)
+
+
+@utils.arg('project_id',
+    metavar = '<project_id>',
+    help = 'Project identifier to show detail for (not the numerical one)'
 )
-@utils.arg('--flush',
-    dest = 'operation',
-    action = 'store_const',
-    const = 'flush',
-    help = 'Flush project list cache'
-)
-@utils.arg('--dump',
-    dest = 'operation',
-    action = 'store_const',
-    const = 'dump',
-    help = 'Dump project list cache'
-)
-def do_project_cache(cli, args):
-    cache = _get_cache(args)
-    f_name = '_do_project_cache_%s' % str(args.operation)
-    callback = getattr(redminecli.shell, f_name)
-    callback(cli, cache, args)
+def do_project_show(cli, args):
 
-def _do_project_cache_flush(cli, cache, args):
-    cache.flush()
-    return 0
-    
+    project = cli.projects[args.project_id]
 
-def _do_project_cache_dump(cli, cache, args):
-    keys = [int(a) for a in cache.keys()]
-    keys.sort()
-    for id in keys:
-        print "[%s] %s" % (str(id), str(cache.get(str(id))))
+    _get_printer('print_project_show', args)(project)
 
-def _do_project_cache_create(cli, cache, args):
-    projects = cli.projects
-    cache.flush()
-
-    #print dir(projects['kerberos'])
-
-    #return 0
-
-    p = []
-
-    for project in projects:
-        #cache.set(str(project.id), project.name)
-        p.append(project)
-
-    print len(p)
-        
-    return 0
