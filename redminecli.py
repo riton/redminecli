@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import os
 import sys
@@ -188,7 +189,7 @@ class RedmineCliShell(object):
         config = this.config
 
         for attr in ( (str, 'global/cache_file', None), (float, 'global/redmine_version', 0.0),
-                      (int, 'global/strings_max_len', 20) ):
+                      (int, 'display/table_max_width', 0), (int, 'display/column_max_len', 0) ):
             attr_t, attr_name, default = attr
             section, opt_name = attr_name.split('/')
 

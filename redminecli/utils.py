@@ -45,10 +45,16 @@ def bool_from_str(val):
 def _set_table_common_opt(pt, args):
     # Table max width
     if not args is None:
-        if not args.strings_max_len is None:
-            pt.max_width = int(args.strings_max_len)
+        if not args.table_max_width is None:
+            if args.table_max_width > 0:
+                pt.max_width = int(args.table_max_width)
 
     return pt
+
+def _get_column_maxlen(args):
+    if not args.column_max_len is None:
+        return int(args.column_max_len)
+    return 0
 
 # Code based on https://github.com/openstack/python-novaclient/blob/master/novaclient/utils.py
 def print_list(objs, fields, formatters={}, sortby_index=None, args = None):
@@ -57,6 +63,8 @@ def print_list(objs, fields, formatters={}, sortby_index=None, args = None):
         sortby = None
     else:
         sortby = fields[sortby_index]
+
+    wrap = _get_column_maxlen(args)
 
     pt = prettytable.PrettyTable([f for f in fields], caching=False)
     pt.align = 'l' 
@@ -72,6 +80,8 @@ def print_list(objs, fields, formatters={}, sortby_index=None, args = None):
             else:
                 field_name = field.lower().replace(' ', '_')
                 data = o.get(field_name, '')
+                if wrap > 0:
+                    data = textwrap.fill(unicode(data), wrap)
                 row.append(data)
 
         pt.add_row(row)
@@ -101,9 +111,9 @@ def print_dict(d, dict_property="Property", wrap=0, args = None, sort_f = None):
         v = d[k]
         # convert dict to str to check length
         if isinstance(v, dict):
-            v = str(v)
+            v = unicode(v)
         if wrap > 0:
-            v = textwrap.fill(str(v), wrap)
+            v = textwrap.fill(unicode(v), wrap)
         # if value has a newline, add in multiple rows
         # e.g. fault with stacktrace
         if v and isinstance(v, basestring) and r'\n' in v:

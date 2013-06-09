@@ -55,8 +55,7 @@ def do_project_show(cli, args):
 
     _get_printer('print_project_show', args)(project, args)
 
-@utils.arg('--project-id',
-    dest = 'project_id',
+@utils.arg('project_id',
     metavar = '<project_id>',
     help = 'Project identifier to retrieve issues for (not the numerical one)'
 )
@@ -67,19 +66,24 @@ def do_issue_list(cli, args):
     # TODO(remi)
     # Handle None case
 
-    issues = project.issues
-    issue = issues.get(4626, parms = {'include': 'journals'})
-    return
+    issues_o = project.issues
 
-    for issue in issues(include='journals'):
-        return
-    return
+    issues = []
 
-    print str(issue.journals)
+    for issue in issues_o:
+        h = {}
+        for attr in ('id', 'priority', 'category', 'status', 'subject'):
+            h[attr] = unicode(getattr(issue, attr, '') or '')
+        for attr in ('author', ):
+            user = getattr(issue, attr, None)
+            if not user:
+                h[attr] = ''
+            else:
+                user.refresh()
+                h[attr] = '%s %s' % (user.firstname, user.lastname)
+        issues.append(h)
 
-    #issues.update(4626, notes = 'plop')
-
-    #_get_printer('print_issue_list', args)(issues, args)
+    _get_printer('print_issue_list', args)(issues, args)
 
 
 @utils.arg('issue_id',
@@ -103,21 +107,23 @@ def do_issue_show(cli, args):
                  'description', 'done_ratio', 'due_date', 'estimated_hours',
                  'priority', 'project', 'spent_hours', 'start_date',
                  'status', 'subject'):
-        h[attr] = getattr(issue, attr, '') or ''
+        h[attr] = unicode(getattr(issue, attr, '') or '')
 
     for attr in ('assigned_to', 'author'):
         user = getattr(issue, attr, None)
-        if not user:
-            continue
-        user.refresh()
-        h[attr] = user.mail
+        if user is None:
+            h[attr] = ''
+        else:
+            user.refresh()
+            h[attr] = '%s %s' % (user.firstname, user.lastname)
 
     _get_printer('print_issue_show', args)(h, args)
 
     journals = []
     if args.get_journal is True:
         journals = [_journal_to_dict(j) for j in issue.journals]
-        _get_printer('print_issue_show_journals', args)(journals, args)
+        if len(journals) > 0:
+            _get_printer('print_issue_show_journals', args)(journals, args)
 
 
 def _journal_to_dict(journal):
@@ -126,9 +132,10 @@ def _journal_to_dict(journal):
     for attr in ('user', ):
         user = getattr(journal, attr, None)
         if not user:
-            continue
-        user.refresh()
-        j[attr] = user.mail
+            j[attr] = ''
+        else:
+            user.refresh()
+            j[attr] = '%s %s' % (user.firstname, user.lastname)
 
     for attr in ('notes', 'created_on', 'details', 'id'):
         j[attr] = getattr(journal, attr, '')

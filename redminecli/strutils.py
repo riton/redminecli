@@ -73,3 +73,6 @@ def safe_decode(text, incoming=None, errors='strict'):
         # Also, UTF-8 is being used since it's an ASCII
         # extension.
         return text.decode('utf-8', errors)
+
+def remove_non_ascii(s):
+    return "".join(filter(lambda x: ord(x) < 128, s))
