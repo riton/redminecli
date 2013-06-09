@@ -84,13 +84,21 @@ def print_list(objs, fields, formatters={}, sortby_index=None, args = None):
 
     print strutils.safe_encode(s)
 
-# Code base on https://github.com/openstack/python-novaclient/blob/master/novaclient/utils.py
-def print_dict(d, dict_property="Property", wrap=0, args = None):
+
+# Code based on https://github.com/openstack/python-novaclient/blob/master/novaclient/utils.py
+def print_dict(d, dict_property="Property", wrap=0, args = None, sort_f = None):
     pt = prettytable.PrettyTable([dict_property, 'Value'], caching=False)
     pt.align = 'l'
     _set_table_common_opt(pt, args)
 
-    for k, v in d.iteritems():
+    keys = None
+    if sort_f is None:
+        keys = d.keys()
+    else:
+        keys = sorted(d.keys(), cmp = sort_f)
+
+    for k in keys:
+        v = d[k]
         # convert dict to str to check length
         if isinstance(v, dict):
             v = str(v)
