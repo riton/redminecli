@@ -1,7 +1,7 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
 #
-# Copyright or © or Copr. Remi Ferrand (2013)
+# Copyright Remi Ferrand (2013)
 # 
 # Remi Ferrand <remi.ferrand_#at#_cc.in2p3.fr>
 # 

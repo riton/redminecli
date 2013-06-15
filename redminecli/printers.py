@@ -1,7 +1,7 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
 #
-# Copyright or © or Copr. Remi Ferrand (2013)
+# Copyright Remi Ferrand (2013)
 # 
 # Remi Ferrand <remi.ferrand_#at#_cc.in2p3.fr>
 # 
@@ -52,6 +52,10 @@ def print_project_show(obj, args):
         o[f] = getattr(obj, f, '')
 
     utils.print_dict(o, args = args)
+
+def print_trackers_list(objs, args):
+    fields = objs[0].keys()
+    utils.print_list(objs, fields, args = args)
 
 def print_issue_list(objs, args):
     fields = objs[0].keys()

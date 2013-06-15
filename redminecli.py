@@ -4,7 +4,7 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
 #
-# Copyright or © or Copr. Remi Ferrand (2013)
+# Copyright Remi Ferrand (2013)
 # 
 # Remi Ferrand <remi.ferrand_#at#_cc.in2p3.fr>
 # 
@@ -44,10 +44,10 @@ import argparse
 import ConfigParser
 
 sys.path.insert(0, "/home/rferrand/Sources/python/redminecli/pyredminews")
+sys.path.insert(0, "/home/riton/Sources/pyredminews")
 import redmine
 
 from redminecli import utils, ProjectListCache
-import redminecli.projects
 import redminecli.shell
 
 options = None
@@ -161,7 +161,7 @@ class RedmineCliShell(object):
             try:
                 api_key = config.get('credentials', 'api_key')
 
-            except ConfigParser.NoOptionError as e:
+            except ConfigParser.Error as e:
                 print >>sys.stderr, "You need to specify your API key either via " \
                         "$REDCLI_API_KEY or in your configuration file"
                 return 1
@@ -171,7 +171,7 @@ class RedmineCliShell(object):
             try:
                 auth_url = config.get('global', 'auth_url')
 
-            except ConfigParser.NoOptionError as e:
+            except ConfigParser.Error as e:
                 print >>sys.stderr, "You need to specify your authentication url either via " \
                         "--auth-url or in your configuration file"
                 return 2
@@ -208,7 +208,7 @@ class RedmineCliShell(object):
             if enabled is False:
                 return
 
-        except ConfigParser.NoOptionError:
+        except ConfigParser.Error:
             return
 
         plugin_dir = config.get('plugins', 'plugin_dir')
@@ -237,7 +237,7 @@ class RedmineCliShell(object):
             try:
                 v = config.get(section, opt_name)
 
-            except ConfigParser.NoOptionError:
+            except ConfigParser.Error:
                 pass
 
             if v is None:

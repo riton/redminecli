@@ -1,7 +1,7 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
 #
-# Copyright or © or Copr. Remi Ferrand (2013)
+# Copyright Remi Ferrand (2013)
 # 
 # Remi Ferrand <remi.ferrand_#at#_cc.in2p3.fr>
 # 
@@ -41,6 +41,12 @@ from redminecli import printers
 # TMP
 from redminecli import strutils
 
+##
+# Global vars
+##
+
+# User cache
+__user_cache = {}
 
 def _get_printer(name, args):
     """
@@ -57,7 +63,7 @@ def _get_printer(name, args):
     return printer
  
 
-def do_project_list(cli, args):
+def do_projects_list(cli, args):
     """
     List all projects
     """
@@ -95,7 +101,7 @@ def do_project_show(cli, args):
     metavar = '<project_id>',
     help = 'Project identifier to retrieve issues for (not the numerical one)'
 )
-def do_issue_list(cli, args):
+def do_issues_list(cli, args):
 
     project = _find_project(cli, args.project_id)
 
@@ -115,12 +121,54 @@ def do_issue_list(cli, args):
             if not user:
                 h[attr] = ''
             else:
-                user.refresh()
+                user = _get_user(cli, user.id)
                 h[attr] = '%s %s' % (user.firstname, user.lastname)
         issues.append(h)
 
     _get_printer('print_issue_list', args)(issues, args)
 
+
+@utils.arg('--subject',
+    dest = 'subject',
+    help = 'Issue subject'
+)
+@utils.arg('--description',
+    dest = 'description',
+    help = 'Issue description'
+)
+@utils.arg('--tracker',
+    dest = 'tracker_id',
+    metavar = '<tracker_id>',
+    help = 'Use tracker <tracker_id> for this issue'
+)
+@utils.arg('--category',
+    dest = 'category_id',
+    metavar = '<category_id>',
+    help = 'Use category <category_id> for this issue'
+)
+@utils.arg('--parent',
+    dest = 'parent_issue_id',
+    metavar = '<parent_id>',
+    help = 'Create issue as a child of issue <parent_id>'
+)
+@utils.arg('--assigned-to',
+    dest = 'assigned_to_id',
+    metavar = '<user_id>',
+    help = 'Assign issue to <user_id>'
+)
+@utils.arg('project_id',
+    metavar = '<project_id>',
+    help = 'Project ID the new issue belongs to'
+)
+def do_issue_create(cli, args):
+    i = cli.projects[args.project_id].issues
+    i.new(description = args.description,
+             subject = args.subject,
+             assigned_to_id = args.assigned_to_id,
+             tracker_id = args.tracker_id,
+             category_id = args.category_id,
+             parent_issue_id = args.parent_issue_id
+             )
 
 @utils.arg('issue_id',
     metavar = '<issue_id>',
@@ -138,6 +186,34 @@ def do_issue_show(cli, args):
 
     issue = cli.issues[args.issue_id]
 
+    h = _issue_to_dict(cli, issue)
+
+    _get_printer('print_issue_show', args)(h, args)
+
+    journals = []
+    if args.get_journal is True:
+        journals = [_journal_to_dict(cli, j) for j in issue.journals]
+        if len(journals) > 0:
+            _get_printer('print_issue_show_journals', args)(journals, args)
+
+def do_trackers_list(cli, args):
+    """
+    List trackers
+    """
+    
+    a = []
+    for t in cli.trackers:
+        a.append({
+            'id'    : t.id,
+            'name'  : t.name
+        })
+
+    a.sort(cmp = lambda x,y: 1 if int(x['id']) > int(y['id']) else -1)
+
+    _get_printer('print_trackers_list', args)(a, args)
+
+
+def _issue_to_dict(cli, issue):
     h = {}
     for attr in ('category', 'created_on',
                  'description', 'done_ratio', 'due_date', 'estimated_hours',
@@ -150,19 +226,13 @@ def do_issue_show(cli, args):
         if user is None:
             h[attr] = ''
         else:
-            user.refresh()
+            user = _get_user(cli, user.id)
             h[attr] = '%s %s' % (user.firstname, user.lastname)
-
-    _get_printer('print_issue_show', args)(h, args)
-
-    journals = []
-    if args.get_journal is True:
-        journals = [_journal_to_dict(j) for j in issue.journals]
-        if len(journals) > 0:
-            _get_printer('print_issue_show_journals', args)(journals, args)
+   
+    return h
 
 
-def _journal_to_dict(journal):
+def _journal_to_dict(cli, journal):
     j = {}
 
     for attr in ('user', ):
@@ -170,7 +240,7 @@ def _journal_to_dict(journal):
         if not user:
             j[attr] = ''
         else:
-            user.refresh()
+            user = _get_user(cli, user.id)
             j[attr] = '%s %s' % (user.firstname, user.lastname)
 
     for attr in ('notes', 'created_on', 'details', 'id'):
@@ -186,3 +256,16 @@ def _find_project(cli, project_id):
     # TODO(remi)
     # Check everything
     return cli.projects[project_id]
+
+def _get_user(cli, user_id):
+    global __user_cache
+
+    key = '%s' % (user_id)
+    if key in __user_cache:
+        return __user_cache[key]
+
+    user = cli.users[user_id]
+
+    __user_cache[key] = user
+    return user
+
