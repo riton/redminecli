@@ -141,6 +141,11 @@ def do_issues_list(cli, args):
     metavar = '<tracker_id>',
     help = 'Use tracker <tracker_id> for this issue'
 )
+@utils.arg('--priority',
+    dest = 'priority_id',
+    metavar = '<priority_id>',
+    help = 'Use tracker <priority_id> for this issue'
+)
 @utils.arg('--category',
     dest = 'category_id',
     metavar = '<category_id>',
@@ -162,13 +167,18 @@ def do_issues_list(cli, args):
 )
 def do_issue_create(cli, args):
     i = cli.projects[args.project_id].issues
-    i.new(description = args.description,
-             subject = args.subject,
-             assigned_to_id = args.assigned_to_id,
-             tracker_id = args.tracker_id,
-             category_id = args.category_id,
-             parent_issue_id = args.parent_issue_id
-             )
+    new_issue = i.new(  description = args.description,
+                        subject = args.subject,
+                        priority_id = args.priority_id,
+                        assigned_to_id = args.assigned_to_id,
+                        tracker_id = args.tracker_id,
+                        category_id = args.category_id,
+                        parent_issue_id = args.parent_issue_id
+                )
+
+    h = _issue_to_dict(cli, new_issue)
+    _get_printer('print_issue_show', args)(h, args)
+
 
 @utils.arg('issue_id',
     metavar = '<issue_id>',
@@ -215,7 +225,7 @@ def do_trackers_list(cli, args):
 
 def _issue_to_dict(cli, issue):
     h = {}
-    for attr in ('category', 'created_on',
+    for attr in ('id', 'category', 'created_on',
                  'description', 'done_ratio', 'due_date', 'estimated_hours',
                  'priority', 'project', 'spent_hours', 'start_date',
                  'status', 'subject'):
