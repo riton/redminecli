@@ -97,6 +97,13 @@ class RedmineCliShell(object):
             help='Use <auth_url> to interact with redmine API'
         )
 
+        parser.add_argument('--unauthenticated',
+            dest='unauthenticated',
+            action='store_true',
+            default=False,
+            help='Run in unauthenticated mode'
+        )
+
         parser.add_argument('--cache-file',
             dest='cache_file',
             metavar='<file>',
@@ -156,15 +163,17 @@ class RedmineCliShell(object):
             subcommand_parser.print_help()
             return 0
 
-        api_key = os.getenv('REDCLI_API_KEY', None)
-        if api_key is None:
-            try:
-                api_key = config.get('credentials', 'api_key')
+        api_key = None
+        if options.unauthenticated is False:
+            api_key = os.getenv('REDCLI_API_KEY', None)
+            if api_key is None:
+                try:
+                    api_key = config.get('credentials', 'api_key')
 
-            except ConfigParser.Error as e:
-                print >>sys.stderr, "You need to specify your API key either via " \
-                        "$REDCLI_API_KEY or in your configuration file"
-                return 1
+                except ConfigParser.Error as e:
+                    print >>sys.stderr, "You need to specify your API key either via " \
+                            "$REDCLI_API_KEY or in your configuration file"
+                    return 1
 
         auth_url = options.auth_url
         if auth_url is None:
