@@ -35,6 +35,11 @@
 # knowledge of the CeCILL license and that you accept its terms.
 #
 
+import os
+import re
+import hashlib
+import tempfile
+import subprocess
 import redminecli
 from redminecli import utils, ProjectListCache
 from redminecli import printers
@@ -161,23 +166,126 @@ def do_issues_list(cli, args):
     metavar = '<user_id>',
     help = 'Assign issue to <user_id>'
 )
+@utils.arg('-e', '--editor',
+    dest = 'use_editor',
+    default = False,
+    action = 'store_true',
+    help = 'Use $EDITOR to setup values'
+)
 @utils.arg('project_id',
     metavar = '<project_id>',
     help = 'Project ID the new issue belongs to'
 )
 def do_issue_create(cli, args):
+
+    user_values = {}
+
+    if args.use_editor:
+        editor = os.getenv('EDITOR', 'vi')
+
+        fh, f_path = _mkstemp()
+
+        _setup_issue_file(  fh,
+                            description = args.description,
+                            subject = args.subject,
+                            priority_id = args.priority_id,
+                            assigned_to_id = args.assigned_to_id,
+                            tracker_id = args.tracker_id,
+                            category_id = args.category_id,
+                            parent_issue_id = args.parent_issue_id
+        )
+
+        os.close(fh)
+
+        md5_orig = _md5sum(f_path)
+
+        # Spawn editor
+        editor_cmd = [editor, f_path]
+        rc = subprocess.call(editor_cmd, stdin = None, stdout = None, stderr = None, shell = False)
+
+        md5_new = _md5sum(f_path)
+
+        if (md5_orig == md5_new):
+            answer = raw_input("File wasn't modified, do you want to commit this issue ? (y/n)")
+            if (answer == 'n'):
+                return
+
+        # Parse issue file
+        user_values = _parse_issue_file(f_path)
+
+    else:
+        user_values = {
+            'description' : args.description,
+            'subject' : args.subject,
+            'priority_id' : args.priority_id,
+            'assigned_to_id' : args.assigned_to_id,
+            'tracker_id' : args.tracker_id,
+            'category_id' : args.category_id,
+            'parent_issue_id' : args.parent_issue_id
+        }
+   
+    # Replace '' with None
+    for k in user_values.keys():
+        if user_values[k] == '':
+            user_values[k] = None
+
+    # Create the issue with user supplied data
     i = cli.projects[args.project_id].issues
-    new_issue = i.new(  description = args.description,
-                        subject = args.subject,
-                        priority_id = args.priority_id,
-                        assigned_to_id = args.assigned_to_id,
-                        tracker_id = args.tracker_id,
-                        category_id = args.category_id,
-                        parent_issue_id = args.parent_issue_id
-                )
+    new_issue = i.new(**user_values)
 
     h = _issue_to_dict(cli, new_issue)
     _get_printer('print_issue_show', args)(h, args)
+
+
+def _setup_issue_file(fh, **kwargs):
+    """
+    Setup issue file ready to be edited with $EDITOR
+    """
+
+    v = []
+    for k in kwargs.keys():
+        s = "<%s>\n" % str(k)
+        if not kwargs[k] is None:
+            s += "%s" % str(kwargs[k])
+        s += "</%s>\n" % str(k)
+
+        v.append(s)
+
+    os.write(fh, "\n".join(v))
+
+
+def _md5sum(file_path):
+    """
+    Compute the md5sum of a file
+    """
+    h = hashlib.md5()
+    with open(file_path, 'r') as f:
+        while True:
+            # MD5 has 128 bytes digest blocks
+            b = f.read(128)
+            if len(b) == 0:
+                break
+            h.update(b)
+
+    return h.hexdigest()
+
+def _parse_issue_file(file_path):
+    """
+    Parse content of issue file after user has edited it
+    """
+
+    content = ""
+    with open(file_path, "r") as f:
+        content = "".join(f.readlines())
+
+    a = re.findall("<(?P<key>.+?)>(?P<name>.+?)</(?P=key)>", content, re.DOTALL | re.MULTILINE)
+
+    h = {}
+    for key, value in a:
+        h[key] = value.strip()
+
+    return h
+
 
 
 @utils.arg('issue_id',
@@ -224,12 +332,15 @@ def do_trackers_list(cli, args):
 
 
 def _issue_to_dict(cli, issue):
+    """
+    Convert an issue object to a python dict ready for *printers*
+    """
     h = {}
     for attr in ('id', 'category', 'created_on',
                  'description', 'done_ratio', 'due_date', 'estimated_hours',
                  'priority', 'project', 'spent_hours', 'start_date',
                  'status', 'subject'):
-        h[attr] = unicode(getattr(issue, attr, '') or '')
+        h[attr] = unicode(getattr(issue, attr, '') or '').replace('\r', '')
 
     for attr in ('assigned_to', 'author'):
         user = getattr(issue, attr, None)
@@ -279,3 +390,5 @@ def _get_user(cli, user_id):
     __user_cache[key] = user
     return user
 
+def _mkstemp():
+    return tempfile.mkstemp(suffix = '', prefix = 'redminecli_', dir = None, text = True)
