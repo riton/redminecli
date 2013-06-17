@@ -14,8 +14,7 @@ This is a brand new project but it already implements basic interactions such as
 * List trackers
 * List projects
 
-Redmine CLI is licensed under the CECILL License (the French version of the GNU License).
-
+Redmine CLI is licensed under CECILL License [1]_ (French version of the GNU License, ).
 
 
 .. contents:: Contents:
@@ -71,3 +70,6 @@ Example::
     | pronto-forms                              | 10833 | pronto forms                             |
     | test-moufid                               | 10838 | Test Moufid                              |
     [...]
+
+
+.. [1] http://www.cecill.info/index.en.html
