@@ -1,9 +1,13 @@
+
 Redmine CLI
 ===========
 
 Redmine CLI aims to be a CLI (Command Line Interface) for redmine (http://www.redmine.org)
 
-This is a brand new project but it already implements basic interactions with Redmine installations:
+Interactions with Redmine API are made throw ``pyredminews`` module (currently, only my version is supported until the author merge my changes).
+
+This is a brand new project but it already implements basic interactions such as:
+
 * Issue creation (using an editor or batch mode)
 * Get issue details
 * List all the issues of a given project
@@ -12,18 +16,20 @@ This is a brand new project but it already implements basic interactions with Re
 
 Redmine CLI is licensed under the CECILL License (the French version of the GNU License).
 
+
+
 .. contents:: Contents:
    :local:
 
 Basic configuration
 -------------------
 
-Default configuration file is ``~/.redminecli/config`` and its format is the one of python ``ConfigParser``:
+Default configuration file is ``~/.redminecli/config`` and its format is the one of python ``ConfigParser``::
 
     [section]
     key = value
 
-__example__:
+Example::
 
     [global]
     auth_url = http://demo.redmine.org
@@ -53,7 +59,7 @@ The default user output is similar to `OpenStack CLI`_ ones, and uses python ``p
 
 .. _OpenStack CLI: https://github.com/openstack
 
-e.g
+Example::
 
     % redminecli.py --auth-url='http://demo.redmine.org' --unauthenticated projects-list
     +-------------------------------------------+-------+------------------------------------------+
